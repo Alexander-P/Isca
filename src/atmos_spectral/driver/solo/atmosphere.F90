@@ -89,7 +89,7 @@ real, allocatable, dimension(:,:,:    ) :: psg, wg_full
 real, allocatable, dimension(:,:,:,:  ) :: ug, vg, tg
 
 real, allocatable, dimension(:,:    ) :: dt_psg
-real, allocatable, dimension(:,:,:  ) :: dt_ug, dt_vg, dt_tg
+real, allocatable, dimension(:,:,:  ) :: dt_ug, dt_vg, dt_tg, teq
 real, allocatable, dimension(:,:,:,:) :: dt_tracers
 
 real, allocatable, dimension(:)   :: deg_lon, deg_lat
@@ -161,6 +161,7 @@ allocate (dt_psg     (is:ie, js:je))
 allocate (dt_ug      (is:ie, js:je, num_levels))
 allocate (dt_vg      (is:ie, js:je, num_levels))
 allocate (dt_tg      (is:ie, js:je, num_levels))
+allocate (teq        (is:ie, js:je, num_levels))
 allocate (dt_tracers (is:ie, js:je, num_levels, num_tracers))
 
 allocate (deg_lon    (is:ie       ))
@@ -294,7 +295,7 @@ else
                     ug(:,:,:,previous),           vg(:,:,:,previous  ), &
                     tg(:,:,:,previous), grid_tracers(:,:,:,previous,:), &
                  dt_ug(:,:,:         ),        dt_vg(:,:,:           ), &
-                 dt_tg(:,:,:         ),   dt_tracers(:,:,:,:), z_full(:,:,:,current))
+                 dt_tg(:,:,:         ),   dt_tracers(:,:,:,:), teq, z_full(:,:,:,current))
 endif
 
 if(previous == current) then
@@ -302,6 +303,8 @@ if(previous == current) then
 else
   future = previous
 endif
+
+tg(:,:,:,future) = teq
 
 call spectral_dynamics(Time, psg(:,:,future), ug(:,:,:,future), vg(:,:,:,future), &
                        tg(:,:,:,future), tracer_attributes, grid_tracers(:,:,:,:,:), future, &

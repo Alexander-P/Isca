@@ -142,7 +142,7 @@ contains
 !#######################################################################
 
  subroutine hs_forcing ( is, ie, js, je, dt, Time, lon, lat, p_half, p_full, &
-                         u, v, t, r, um, vm, tm, rm, udt, vdt, tdt, rdt, zfull,&
+                         u, v, t, r, um, vm, tm, rm, udt, vdt, tdt, rdt, teq, zfull,&
                          mask, kbot )
 
 !-----------------------------------------------------------------------
@@ -155,6 +155,7 @@ contains
       real, intent(in),    dimension(:,:,:,:) :: r, rm
       real, intent(inout), dimension(:,:,:)   :: udt, vdt, tdt
       real, intent(inout), dimension(:,:,:,:) :: rdt
+      real, intent(out),   dimension(;,:,:)   :: teq
 
       real, intent(in),    dimension(:,:,:), optional :: mask
    integer, intent(in),    dimension(:,:)  , optional :: kbot
