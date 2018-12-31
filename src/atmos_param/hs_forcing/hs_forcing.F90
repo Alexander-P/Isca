@@ -155,13 +155,13 @@ contains
       real, intent(in),    dimension(:,:,:,:) :: r, rm
       real, intent(inout), dimension(:,:,:)   :: udt, vdt, tdt
       real, intent(inout), dimension(:,:,:,:) :: rdt
-      real, intent(out),   dimension(;,:,:)   :: teq
+      real, intent(out),   dimension(:,:,:)   :: teq
 
       real, intent(in),    dimension(:,:,:), optional :: mask
    integer, intent(in),    dimension(:,:)  , optional :: kbot
 !-----------------------------------------------------------------------
    real, dimension(size(t,1),size(t,2))           :: ps, diss_heat, h_trop
-   real, dimension(size(t,1),size(t,2),size(t,3)) :: ttnd, utnd, vtnd, teq, pmass
+   real, dimension(size(t,1),size(t,2),size(t,3)) :: ttnd, utnd, vtnd, pmass
    real, dimension(size(r,1),size(r,2),size(r,3)) :: rst, rtnd
    integer :: i, j, k, kb, n, num_tracers
    logical :: used

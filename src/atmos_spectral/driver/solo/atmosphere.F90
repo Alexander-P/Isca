@@ -175,7 +175,7 @@ allocate (rad_latb (js:je+1))
 
 p_half = 0.; z_half = 0.; p_full = 0.; z_full = 0.
 wg_full = 0.; psg = 0.; ug = 0.; vg = 0.; tg = 0.; grid_tracers = 0.
-dt_psg = 0.; dt_ug  = 0.; dt_vg  = 0.; dt_tg  = 0.; dt_tracers = 0.
+dt_psg = 0.; dt_ug  = 0.; dt_vg  = 0.; dt_tg  = 0.; ; teq = 0; dt_tracers = 0.
 
 allocate (surf_geopotential(is:ie, js:je))
 call get_surf_geopotential(surf_geopotential)
@@ -304,6 +304,7 @@ else
   future = previous
 endif
 
+!print teq
 tg(:,:,:,future) = teq
 
 call spectral_dynamics(Time, psg(:,:,future), ug(:,:,:,future), vg(:,:,:,future), &
@@ -353,7 +354,7 @@ enddo
 call write_data(trim(file), 'wg_full', wg_full, grid_domain)
 
 deallocate (p_half, z_half, p_full, z_full, wg_full, psg, ug, vg, tg, grid_tracers)
-deallocate (dt_psg, dt_ug, dt_vg, dt_tg, dt_tracers)
+deallocate (dt_psg, dt_ug, dt_vg, dt_tg, dt_tracers, teq)
 deallocate (deg_lon, rad_lon_2d, deg_lat, rad_lat_2d)
 
 call set_domain(grid_domain)
