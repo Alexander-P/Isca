@@ -95,6 +95,7 @@ private
    character(len=256) :: equilibrium_t_option = 'Held_Suarez'  ! Valid options are 'Held_Suarez', 'from_file', 'exoplanet'
    character(len=256) :: equilibrium_t_file='temp'  ! Name of file relative to $work/INPUT  Used only when equilibrium_t_option='from_file'
    character(len=256) :: stratosphere_t_option = 'extend_tp' 
+   character(len=256) :: hc_option = 'standard' 
    
    real :: peri_time=0.25, smaxis=1.5e6, albedo=0.3
    real :: lapse=6.5, h_a=2, tau_s=5      
@@ -114,8 +115,9 @@ private
                               local_heating_file, relax_to_specified_wind,   &
                               u_wind_file, v_wind_file, equilibrium_t_option,&
                               equilibrium_t_file, peri_time, smaxis, albedo, &
-                              lapse, h_a, tau_s, orbital_period,         &
-                              heat_capacity, ml_depth, spinup_time, stratosphere_t_option
+                              lapse, h_a, tau_s, orbital_period,             &
+                              heat_capacity, ml_depth, spinup_time, 		 &
+                              stratosphere_t_option, hc_option
 
 !-----------------------------------------------------------------------
 
@@ -142,7 +144,7 @@ contains
 !#######################################################################
 
  subroutine hs_forcing ( is, ie, js, je, dt, Time, lon, lat, p_half, p_full, &
-                         u, v, t, r, um, vm, tm, rm, udt, vdt, tdt, rdt, zfull,&
+                         u, v, t, r, um, vm, tm, rm, udt, vdt, tdt, rdt, teq, zfull,&
                          mask, kbot )
 
 !-----------------------------------------------------------------------
@@ -155,12 +157,13 @@ contains
       real, intent(in),    dimension(:,:,:,:) :: r, rm
       real, intent(inout), dimension(:,:,:)   :: udt, vdt, tdt
       real, intent(inout), dimension(:,:,:,:) :: rdt
+      real, intent(inout),   dimension(:,:,:) :: teq
 
       real, intent(in),    dimension(:,:,:), optional :: mask
    integer, intent(in),    dimension(:,:)  , optional :: kbot
 !-----------------------------------------------------------------------
    real, dimension(size(t,1),size(t,2))           :: ps, diss_heat, h_trop
-   real, dimension(size(t,1),size(t,2),size(t,3)) :: ttnd, utnd, vtnd, teq, pmass
+   real, dimension(size(t,1),size(t,2),size(t,3)) :: ttnd, utnd, vtnd, pmass
    real, dimension(size(r,1),size(r,2),size(r,3)) :: rst, rtnd
    integer :: i, j, k, kb, n, num_tracers
    logical :: used
@@ -350,10 +353,14 @@ contains
 		t_trop(:,:) = t_radbal(:,:)/(2**0.25)
 		
 		h_trop = 1.0/(16*lapse)*(1.3863*t_trop + sqrt((1.3863*t_trop)**2 + 32*lapse*tau_s*h_a*t_trop))
-		t_surf = t_trop + h_trop*lapse
+		
+		if (hc_option == 'early_hc') then
+			tg = stefan*86400*step_days/(ml_depth*heat_capacity)*(t_trop**4 - tg_prev**4) + tg_prev
+		else
+			t_surf = t_trop + h_trop*lapse
 	
-		tg(:,:) =  stefan*86400*step_days/(ml_depth*heat_capacity)*(t_surf**4 - tg_prev**4) + tg_prev
-
+			tg(:,:) =  stefan*86400*step_days/(ml_depth*heat_capacity)*(t_surf**4 - tg_prev**4) + tg_prev
+		endif
 		if (spin_count >= spinup_time) then
 			print *, 'SPINUP COMPLETE AFTER ', spin_count, 'ITERATIONS'
 			exit
@@ -944,12 +951,19 @@ real, intent(in),  dimension(:,:,:), optional :: mask
     t_trop(:,:) = t_radbal(:,:)/(2**0.25)        
     h_trop = 1.0/(16*lapse)*(1.3863*t_trop + sqrt((1.3863*t_trop)**2 + 32*lapse*tau_s*h_a*t_trop))
 
-	t_surf = t_trop(:,:) + h_trop*lapse
-	tg(:,:) = stefan*dt/(ml_depth*heat_capacity)*(t_surf**4 - tg_prev**4) + tg_prev
-	tg_prev = tg
-	t_trop(:,:) = tg(:,:) - h_trop*lapse
 
-
+	if (hc_option == 'early_hc') then
+		! --- just do hc at the tropopause ---
+		t_trop(:,:) = stefan*dt/(ml_depth*heat_capacity)*(t_trop**4 - tg_prev**4) + tg_prev
+		tg_prev = t_trop
+		h_trop = 1.0/(16*lapse)*(1.3863*t_trop + sqrt((1.3863*t_trop)**2 + 32*lapse*tau_s*h_a*t_trop))
+	else
+		! --- go down to surface then apply heat capacity
+		t_surf = t_trop(:,:) + h_trop*lapse
+		tg(:,:) = stefan*dt/(ml_depth*heat_capacity)*(t_surf**4 - tg_prev**4) + tg_prev
+		tg_prev = tg
+		t_trop(:,:) = tg(:,:) - h_trop*lapse
+	endif
 	!----- stratosphere temperature ------------
       tstr  (:,:) = t_strat - eps*sin_lat(:,:)
    
